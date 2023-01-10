@@ -9,8 +9,7 @@ networks:
 
 services:
   unbound:
-    #image: "mvance/unbound-rpi:latest"
-    image: "mvance/unbound:1.17.0"
+    image: "klutchell/unbound"
     container_name: unbound
     restart: unless-stopped
     hostname: "unbound"
