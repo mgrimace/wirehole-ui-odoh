@@ -48,8 +48,6 @@ services:
     dns:
       - 10.2.0.100 # Points to pihole
       - 10.2.0.200 # Points to unbound
-
-    restart: unless-stopped
     networks:
       private_network:
         ipv4_address: 10.2.0.3
