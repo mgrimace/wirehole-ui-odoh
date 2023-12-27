@@ -23,15 +23,23 @@ services:
       # ⚠️ Required:
       # Change this to your host's public address
       - WG_HOST= my.ddns.net
-
-      # Optional:
       - PASSWORD=10h30
       - WG_PORT=51820
       - WG_DEFAULT_ADDRESS=10.6.0.x
       - WG_DEFAULT_DNS=10.2.0.100
+      
+      # Optional:
       # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
+      # - WG_INTERFACE=wg0
+      # - WG_MTU=1420
+      # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
+      # - WG_PERSISTENT_KEEPALIVE=25
+      # - WG_PRE_UP=echo "Pre Up" > /etc/wireguard/pre-up.txt
+      # - WG_POST_UP=echo "Post Up" > /etc/wireguard/post-up.txt
+      # - WG_PRE_DOWN=echo "Pre Down" > /etc/wireguard/pre-down.txt
+      # - WG_POST_DOWN=echo "Post Down" > /etc/wireguard/post-down.txt
 
-    image: weejewel/wg-easy
+    image: ghcr.io/wg-easy/wg-easy
     container_name: wg-easy
     volumes:
       - .:/etc/wireguard
