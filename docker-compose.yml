@@ -1,52 +1,68 @@
-version: "3"
-
-networks:
-  private_network:
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.2.0.0/24
-
 services:
-  unbound:
-    image: "klutchell/unbound"
-    container_name: unbound
+  dnscrypt-proxy:
+    image: klutchell/dnscrypt-proxy:latest
+    container_name: dnscrypt-proxy
+    hostname: dnscrypt-proxy
     restart: unless-stopped
-    hostname: "unbound"
+    volumes:
+      - ./dnscrypt-proxy:/config
+    command: -config /config/dnscrypt-proxy.toml
+    expose:
+      - "5350"
     networks:
-      private_network:
+      wirehole:
         ipv4_address: 10.2.0.200
 
-  wg-easy:
-    depends_on: [unbound, pihole]
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    hostname: pihole
+    restart: unless-stopped
+    depends_on:
+      - dnscrypt-proxy
     environment:
-      # ⚠️ Required:
-      # Change this to your host's public address
-      - WG_HOST= my.ddns.net
-      - PASSWORD=10h30
-      - WG_PORT=51820
-      - WG_DEFAULT_ADDRESS=10.6.0.x
-      - WG_DEFAULT_DNS=10.2.0.100
-      
-      # Optional:
-      # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
-      # - WG_INTERFACE=wg0
-      # - WG_MTU=1420
-      # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
-      # - WG_PERSISTENT_KEEPALIVE=25
-      # - WG_PRE_UP=echo "Pre Up" > /etc/wireguard/pre-up.txt
-      # - WG_POST_UP=echo "Post Up" > /etc/wireguard/post-up.txt
-      # - WG_PRE_DOWN=echo "Pre Down" > /etc/wireguard/pre-down.txt
-      # - WG_POST_DOWN=echo "Post Down" > /etc/wireguard/post-down.txt
-
-    image: ghcr.io/wg-easy/wg-easy:13
-    container_name: wg-easy
+      TZ: "America/Toronto"
+      FTLCONF_webserver_api_password: "${PIHOLE_WEB_PASSWORD}" #add a password or use a .env file
+      FTLCONF_dns_listeningMode: "all"
+      FTLCONF_dns_upstreams: "10.2.0.200#5350"
+      ServerIP: 10.2.0.100
+      DNSSEC: "false"
     volumes:
-      - .:/etc/wireguard
+      - ./etc-pihole:/etc/pihole
+      - ./etc-dnsmasq.d:/etc/dnsmasq.d
+      - ./var-log:/var/log/pihole
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80"
+      - "443:443"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      wirehole:
+        ipv4_address: 10.2.0.100
+
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
+    restart: unless-stopped
+    depends_on:
+      - dnscrypt-proxy
+      - pihole
+    environment:
+      # Legacy wg-easy variables (WG_HOST, WG_PORT, etc.) are incompatible in wg-easy:15 and kept here only for setup reference
+      #WG_HOST: "${WG_HOST}"
+      #WG_PORT: 51820
+      #WG_DEFAULT_ADDRESS: 10.6.0.x
+      #WG_DEFAULT_DNS: 10.2.0.100
+      #WG_ALLOWED_IPS: 10.2.0.0/24
+      INSECURE: true #so we can access the webui locally
+    volumes:
+      - ./wireguard/etc_wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
     ports:
       - "51820:51820/udp"
       - "51821:51821/tcp"
-    restart: unless-stopped
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -54,36 +70,25 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
     dns:
-      - 10.2.0.100 # Points to pihole
-      - 10.2.0.200 # Points to unbound
+      - 10.2.0.100
     networks:
-      private_network:
+      wirehole:
         ipv4_address: 10.2.0.3
 
-  pihole:
-    depends_on: [unbound]
-    container_name: pihole
-    image: pihole/pihole:latest
+  # Optional automatic updates.
+  # Note wg-easy is set to version 15, as new versions include breaking changes. 
+  # Comment out watchtower to disable updates
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
     restart: unless-stopped
-    hostname: pihole
-    dns:
-      - 127.0.0.1
-      - 10.2.0.200 # Points to unbound
-    environment:
-      TZ: "Asia/Hong_Kong"
-      FTLCONF_webserver_api_password: "" # Blank password - Can be whatever you want.
-      FTLCONF_dns_listeningMode: 'all'
-      ServerIP: 10.2.0.100 # Internal IP of pihole
-      DNS1: 10.2.0.200 # Unbound IP
-      DNS2: 10.2.0.200 # If we don't specify two, it will auto pick google.
-    # Volumes store your data between container upgrades
     volumes:
-      - "./etc-pihole/:/etc/pihole/"
-      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
-    # Recommended but not required (DHCP needs NET_ADMIN)
-    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
-    cap_add:
-      - NET_ADMIN
-    networks:
-      private_network:
-        ipv4_address: 10.2.0.100
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 3600
+
+networks:
+  wirehole:
+    name: wirehole
+    ipam:
+      config:
+        - subnet: 10.2.0.0/24
