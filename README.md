@@ -30,10 +30,10 @@ This fork builds on the work of:
 - **[@IAmStoxe](https://github.com/IAmStoxe)** – Creator of the original [WireHole](https://github.com/IAmStoxe/WireHole)  
   ☕ [Buy Me a Coffee](https://www.buymeacoffee.com/IAmStoxe)
 
-- **[@10h30](https://github.com/10h30)** – Developer of the wirehole-ui interface
+- **[@10h30](https://github.com/10h30)** – Developer of the wirehole-ui fork 
   🔗 [Wirehole-UI](https://github.com/10h30/wirehole-ui) 
 
-- **[@SwaroopGiri](https://github.com/SwaroopGiri)** – Inspiration for ODoH + Pi-hole integration from  
+- **[@SwaroopGiri](https://github.com/SwaroopGiri)** – Inspiration for ODoH + Pi-hole integration
   🔗 [Pihole-with-Anonymized-ODOH](https://github.com/SwaroopGiri/Pihole-with-Anonymized-ODOH/)
 
 ---
@@ -107,7 +107,7 @@ docker compose up -d
       ```
 
 6. **Setup WG-Easy and split-tunnel**
-    - Navigate to the Web UI will atn http://0.0.0.0:51821 or http://<device or server IP>:51821. 
+    - Navigate to the Web UI will atn http://0.0.0.0:51821 or http://[device or server IP]:51821. 
     - Setup your admin account, and navigate to administrator>admin panel>config (see screeshot below)
     - Set 'HOST' to your Dynamic DNS (DDNS) address or your server's public address
     - Set DNS as `10.2.0.11`
@@ -135,7 +135,7 @@ docker compose up -d
 
 ## Access PiHole
 
-Navigate to your Wirehole's local IP https://<wirehole ip>/admin, or, while connected to WireGuard, navigate to http://10.2.0.100/admin 
+Navigate to your Wirehole's local IP https://[wirehole ip]/admin, or, while connected to WireGuard, navigate to http://10.2.0.100/admin 
 
 ![](https://i.imgur.com/hlHL6VA.png)
 
@@ -184,7 +184,6 @@ Below are the instructions for updating **containers**:
 > **Note:** Watchtower is not endorsed as a solution for automated updates of existing Docker containers. In fact generally automated updates are discouraged. However, this is a useful tool for largely unattended systems. In this fork, both PiHole and DNSCrypt-Proxy use the `latest` tags which *may* cause breaking changes on updates, but generally do not; whereas WG-easy is preset to version `15` becasuse new versions *often* include breaking changes. LinuxServer.io highly recommends using Docker Compose.
 
 ---
-
 
 ## FAQ
 
